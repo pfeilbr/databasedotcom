@@ -379,8 +379,20 @@ module Databasedotcom
       response
     end
 
+    def proxy
+      http_proxy = ENV['http_proxy']
+      URI.parse(http_proxy) rescue nil
+    end    
+    
     def https_request(host=nil)
-      Net::HTTP.new(host || URI.parse(self.instance_url).host, 443).tap do |http| 
+      
+      if proxy
+        http = Net::HTTP::Proxy(proxy.host, proxy.port).new(host || URI.parse(self.instance_url).host, 443)
+      else
+        http = Net::HTTP.new(host || URI.parse(self.instance_url).host, 443)
+      end      
+      
+      http.tap do |http| 
         http.use_ssl = true 
         http.ca_file = self.ca_file if self.ca_file
         http.verify_mode = self.verify_mode if self.verify_mode
